@@ -102,3 +102,19 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+// Update logged-in volunteer's current location
+exports.updateLocation = async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { location: { latitude, longitude, updatedAt: new Date() } },
+      { new: true }
+    ).select('-password');
+
+    res.json({ message: 'Location updated', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

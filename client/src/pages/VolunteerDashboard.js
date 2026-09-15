@@ -40,6 +40,7 @@ function AlertCard(props) {
 function VolunteerDashboard() {
   const [alerts, setAlerts] = useState([]);
   const [message, setMessage] = useState('');
+  const [locationReady, setLocationReady] = useState(false);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
@@ -48,15 +49,48 @@ function VolunteerDashboard() {
       const res = await API.get('/alerts/active');
       setAlerts(res.data.alerts);
     } catch (err) {
-      setMessage('Failed to load alerts');
+      if (err.response && err.response.status === 400) {
+        setMessage(err.response.data.message);
+      } else {
+        setMessage('Failed to load alerts');
+      }
     }
   };
 
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      setMessage('Location access is not supported on this browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await API.patch('/users/location', {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          });
+          setLocationReady(true);
+        } catch (err) {
+          setMessage('Failed to update location');
+        }
+      },
+      () => {
+        setMessage('Please enable location access to see nearby alerts');
+      }
+    );
+  };
+
   useEffect(() => {
+    shareLocation();
+  }, []);
+
+  useEffect(() => {
+    if (!locationReady) return;
     fetchAlerts();
     const interval = setInterval(fetchAlerts, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [locationReady]);
 
   const handleAccept = async (id) => {
     try {

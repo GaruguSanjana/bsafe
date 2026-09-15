@@ -1,4 +1,8 @@
 const Alert = require('../models/Alert');
+const User = require('../models/User');
+const { getDistanceInKm } = require('../utils/distance');
+
+const NEARBY_RADIUS_KM = 10; // adjust as needed
 
 // Create SOS Alert
 exports.createAlert = async (req, res) => {
@@ -18,13 +22,32 @@ exports.createAlert = async (req, res) => {
   }
 };
 
-// Get all active alerts (for volunteers)
+// Get active alerts near the logged-in volunteer
 exports.getActiveAlerts = async (req, res) => {
   try {
+    const volunteer = await User.findById(req.user.userId);
+
+    if (!volunteer.location || volunteer.location.latitude == null) {
+      return res.status(400).json({
+        message: 'Enable location access to view nearby alerts'
+      });
+    }
+
     const alerts = await Alert.find({ status: 'active' })
       .populate('user', 'name phone');
 
-    res.json({ alerts });
+    const nearbyAlerts = alerts.filter(alert => {
+      if (!alert.location || alert.location.latitude == null) return false;
+      const distance = getDistanceInKm(
+        volunteer.location.latitude,
+        volunteer.location.longitude,
+        alert.location.latitude,
+        alert.location.longitude
+      );
+      return distance <= NEARBY_RADIUS_KM;
+    });
+
+    res.json({ alerts: nearbyAlerts });
 
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -75,6 +98,7 @@ exports.getMyAlerts = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 // Admin: get all alerts + stats
 exports.getAllAlertsAdmin = async (req, res) => {
   try {
@@ -91,6 +115,7 @@ exports.getAllAlertsAdmin = async (req, res) => {
     };
 
     res.json({ alerts, stats });
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

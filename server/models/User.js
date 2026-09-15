@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
     age: { type: Number },
     photoUrl: { type: String, default: '' }
   },
+  location: {
+    latitude: { type: Number },
+    longitude: { type: Number },
+    updatedAt: { type: Date }
+  },
   isVerified: {
     type: Boolean,
     default: false

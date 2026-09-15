@@ -9,7 +9,8 @@ const {
   getPendingVolunteers,
   verifyVolunteer,
   getAllUsers,
-  deleteUser
+  deleteUser,
+  updateLocation
 } = require('../controllers/userController');
 
 router.get('/profile', protect, getProfile);
@@ -20,5 +21,6 @@ router.get('/pending-volunteers', protect, adminOnly, getPendingVolunteers);
 router.put('/verify/:id', protect, adminOnly, verifyVolunteer);
 router.get('/all', protect, adminOnly, getAllUsers);
 router.delete('/:id', protect, adminOnly, deleteUser);
+router.patch('/location', protect, updateLocation);
 
 module.exports = router;
